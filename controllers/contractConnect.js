@@ -3,13 +3,8 @@ import web3 from "../contracts/web3";
 import factory from '../contracts/build/contracts/VotingFactory.json'
 import election from '../contracts/build/contracts/votingSystem.json'
 
-const getAccounts = () => {
-    const accounts = await web3.eth.getAccounts();
-    return accounts;
-}
-
 const connectFactory = () => {
-    return new web3.eth.Contract(JSON.parse(JSON.stringify(factory.abi)),"0x14e9257A4Df744aC321Df658C0c82060A1A2762D");
+    return new web3.eth.Contract(JSON.parse(JSON.stringify(factory.abi)),"0xDD419DA304929c650CD252931A606B96BD6E9BAD");
 }
 
 const connectElection = address => {
@@ -22,7 +17,8 @@ const createElection = async (name, level, electionType) => {
             console.log("wrong inputs");
             return;
         }
-        await connectFactory.methods.createElection(name, level, electionType).send({from: getAccounts()[0]})
+        const address = await web3.eth.getAccounts();
+        await connectFactory().methods.createElection(name, level, electionType).send({from : address[0]})
     }
     catch(err) {
         console.log("An error caught in createElection", err);
@@ -31,7 +27,9 @@ const createElection = async (name, level, electionType) => {
 
 const getDeployedElections = async() => {
     try{
-        const elections = await connectFactory.methods.getDeployedElections().call({from : getAccounts()[0]});
+        const address = await web3.eth.getAccounts();
+        const elections = await connectFactory().methods.getDeployedElections().call({from : address[0]});
+        console.log(elections);
         return elections;
     }
     catch(err) {
@@ -39,49 +37,56 @@ const getDeployedElections = async() => {
     }
 }
 
-const registerVoter = async (name, age, aadharNumber, phone) => {
+const registerVoter = async (name, age, aadharNumber, phone, contractAddress) => {
     try{
-        await connectElection.methods.registerVoter(name, age, aadharNumber, phone).send({from: getAccounts()[0]})
+        const address = await web3.eth.getAccounts();
+        const data = await connectElection(contractAddress).methods.registerVoter(name, age, aadharNumber, phone).send({from: address[0]})
+        console.log(data);
     }
     catch(err) {
-        console.log("An error occured while registering voter");
+        console.log("An error occured while registering voter", err);
     }
 }
 
-const registerCandidate = async (name, party, age, aadharNumber) => {
+const registerCandidate = async (name, party, age, aadharNumber, contractAddress) => {
     try {
-        await connectElection.methods.registerCandidate(name, party, age, aadharNumber).send({from : getAccounts()[0]});
+        const address = await web3.eth.getAccounts();
+        await connectElection(contractAddress).methods.registerCandidate(name, party, age, aadharNumber).send({from : address[0]});
     }
     catch(err) {
         console.log("An error occured in registerCandidate");
     }
 }
 
-const approveCandidate = async (address) => {
+const approveCandidate = async (candidateAddress, contractAddress) => {
     try {
-        await connectElection.methods.approveCandidate(address).send({from : getAccounts()[0]});
+        const address = await web3.eth.getAccounts();
+        await connectElection(contractAddress).methods.approveCandidate(candidateAddress).send({from : address[0]});
     }
     catch(err) {
         console.log("An error occured in approveCandidate",err)
     }
 }
 
-const approveVoter = async (address) => {
+const approveVoter = async (voterAddress, contractAddress) => {
     try {
-        await connectElection.methods.approveVoter(address).send({from : getAccounts()[0]});
+        const address = await web3.eth.getAccounts();
+        await connectElection(contractAddress).methods.approveVoter(voterAddress).send({from : address[0]});
     }
     catch(err) {
         console.log("An error occured in approveVoter", err);
     }
 }
 
-const getPersonalInfo = async () => {
+const getPersonalInfo = async (contractAddress) => {
     try{
-        await connectElection.methods.getPersonalInfo().call({from: getAccounts()[0]});
+        const address = await web3.eth.getAccounts();
+        const data = await connectElection(contractAddress).methods.getPersonalInfo().call({from: address[0]});
+        console.log(data);
     }
     catch(err) {
         console.log("An error occured in getPersonalInfo", err);
     }
 }
 
-export {createElection, getDeployedElections, registerVoter, registerCandidate, approveCandidate, approveVoter, getPersonalInfo}
+export { createElection, getDeployedElections, registerVoter, registerCandidate, approveCandidate, approveVoter, getPersonalInfo}
